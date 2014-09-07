@@ -4,10 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/fsouza/go-dockerclient"
 )
@@ -57,9 +55,7 @@ func newSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lang := langs[session.Lang]
-	log.Printf("Language %s given", lang)
 	img := imgNameFromLang(lang)
-	fmt.Println(img)
 
 	codeTmpFilename := fmt.Sprintf("/tmp/mkdn/%x", md5.Sum([]byte(session.Code)))
 
@@ -80,8 +76,6 @@ func newSession(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	fmt.Println(container.ID)
-
 	err = c.StartContainer(container.ID, &docker.HostConfig{
 		Binds: []string{"/tmp/mkdn:/tmp/mkdn"},
 	})
@@ -89,13 +83,13 @@ func newSession(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	time.Sleep(1 * time.Second)
-
 	err = c.Logs(docker.LogsOptions{
 		Container:    container.ID,
 		OutputStream: w,
+		ErrorStream:  w,
 		Stdout:       true,
 		Stderr:       true,
+		Follow:       true,
 	})
 	if err != nil {
 		panic(err)
